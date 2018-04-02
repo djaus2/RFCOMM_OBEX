@@ -29,8 +29,7 @@ namespace RFCOMM_OBEX
         public MainPage()
         {
             this.InitializeComponent();
-
-
+            root = this;
         }
 
         private async Task PickAFile()
@@ -53,7 +52,7 @@ namespace RFCOMM_OBEX
             }
             else
             {
-                this.textBlock.Text = "Operation cancelled.";
+                PostMessage( "Operation cancelled.");
             }
             sndr = null;
         }
@@ -87,17 +86,17 @@ namespace RFCOMM_OBEX
                     await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
                 if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
                 {
-                    this.textBlock.Text = "File " + file.Name + " was saved.";
+                    PostMessage( "File " + file.Name + " was saved.");
                     
                 }
                 else
                 {
-                    this.textBlock.Text = "File " + file.Name + " couldn't be saved.";
+                    PostMessage( "File " + file.Name + " couldn't be saved.");
                 }
             }
             else
             {
-                this.textBlock.Text = "Operation cancelled.";
+                PostMessage( "Operation cancelled.");
             }
             rcvr = null;
         }
@@ -115,21 +114,25 @@ namespace RFCOMM_OBEX
             await SaveAFile(txt);
         }
 
-        private async void Page_Loaded(object sender, RoutedEventArgs e)
-        {
-            sndr = new OBEX_Sender();
-            rcvr = new OBEX_Receiver();
-            await sndr.Initialize();
-            await rcvr.Initialize();
-        }
-
-        private void Button_Click_2(object sender, RoutedEventArgs e)
+        private  void Page_Loaded(object sender, RoutedEventArgs e)
         {
 
         }
 
-        private async void Button_Click_3(object sender, RoutedEventArgs e)
+
+
+        public static MainPage root;
+
+        public void PostMessage(string msg)
         {
+            var t = Task.Run(async () =>
+                {
+                    await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        this.textBlock.Text = msg;
+
+                    });
+                });
             
         }
     }
