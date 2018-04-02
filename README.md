@@ -10,4 +10,5 @@ Note includes corrections to code.
 - Press Recv on other target and choose file to save as. 
 
 ***Note** although filename gets transmitted, the file gets saved as the Save As filename.*
+Also the services are initiated when the send and receive are actioned and disposed of when done.
 
