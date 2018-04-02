@@ -60,7 +60,7 @@ namespace RFCOMM_OBEX
 
         private async Task SaveAFile(string txt)
         {
-            rcvr = new OBEX_Receiver();();
+            rcvr = new OBEX_Receiver();
             await rcvr.Initialize();
 
             var savePicker = new Windows.Storage.Pickers.FileSavePicker();
