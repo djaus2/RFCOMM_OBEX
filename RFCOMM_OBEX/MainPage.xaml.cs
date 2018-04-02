@@ -35,6 +35,8 @@ namespace RFCOMM_OBEX
 
         private async Task PickAFile()
         {
+            sndr = new OBEX_Sender();
+            await sndr.Initialize();
             var picker = new Windows.Storage.Pickers.FileOpenPicker();
             picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail;
             picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
@@ -53,10 +55,14 @@ namespace RFCOMM_OBEX
             {
                 this.textBlock.Text = "Operation cancelled.";
             }
+            sndr = null;
         }
 
         private async Task SaveAFile(string txt)
         {
+            rcvr = new OBEX_Receiver();();
+            await rcvr.Initialize();
+
             var savePicker = new Windows.Storage.Pickers.FileSavePicker();
             savePicker.SuggestedStartLocation =
                 Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
@@ -93,6 +99,7 @@ namespace RFCOMM_OBEX
             {
                 this.textBlock.Text = "Operation cancelled.";
             }
+            rcvr = null;
         }
 
         string txt { get; set; } = "";
