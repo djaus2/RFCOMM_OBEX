@@ -9,5 +9,5 @@ Note includes corrections to code.
 - Press Send on one and choose a text file to send.
 - Press Recv on other target and choose file to save as. 
 
-***Note* although filename gets transmitted, the file gets saved as the Save As name.**
+***Note** although filename gets transmitted, the file gets saved as the Save As filename.*
 
