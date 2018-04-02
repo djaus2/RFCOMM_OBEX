@@ -33,9 +33,8 @@ namespace RFCOMM_OBEX
 
         }
 
-        private async Task<string> PickAFile()
+        private async Task PickAFile()
         {
-            string ret = "";
             var picker = new Windows.Storage.Pickers.FileOpenPicker();
             picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail;
             picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
@@ -46,13 +45,14 @@ namespace RFCOMM_OBEX
             {
                 // Application now has read/write access to the picked file
                 this.textBlock.Text = "Picked textfile: " + file.Name;
-                ret = await Windows.Storage.FileIO.ReadTextAsync(file);
+                txt = await Windows.Storage.FileIO.ReadTextAsync(file);
+                filename = file.Name;
+                await sndr.Send(txt, filename);
             }
             else
             {
                 this.textBlock.Text = "Operation cancelled.";
             }
-            return ret;
         }
 
         private async Task SaveAFile(string txt)
@@ -72,7 +72,8 @@ namespace RFCOMM_OBEX
                 // we finish making changes and call CompleteUpdatesAsync.
                 Windows.Storage.CachedFileManager.DeferUpdates(file);
                 // write to file
-                await Windows.Storage.FileIO.WriteTextAsync(file, txt);
+                FileDetail rcvFile = await rcvr.ReadAsync();
+                await Windows.Storage.FileIO.WriteTextAsync(file, rcvFile.txt);
                 // Let Windows know that we're finished changing the file so
                 // the other app can update the remote version of the file.
                 // Completing updates may require Windows to ask for user input.
@@ -81,6 +82,7 @@ namespace RFCOMM_OBEX
                 if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
                 {
                     this.textBlock.Text = "File " + file.Name + " was saved.";
+                    
                 }
                 else
                 {
@@ -94,9 +96,11 @@ namespace RFCOMM_OBEX
         }
 
         string txt { get; set; } = "";
+        string filename { get; set; } = "";
+
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            txt = await PickAFile();
+            await PickAFile();
         }
 
         private async void Button_Click_1(object sender, RoutedEventArgs e)
@@ -119,7 +123,7 @@ namespace RFCOMM_OBEX
 
         private async void Button_Click_3(object sender, RoutedEventArgs e)
         {
-            await sndr.Send(txt);
+            
         }
     }
 }

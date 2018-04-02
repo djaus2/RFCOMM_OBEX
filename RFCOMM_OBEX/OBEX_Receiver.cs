@@ -53,6 +53,7 @@ namespace RFCOMM_OBEX
         }
 
         StreamSocket _socket;
+        DataReader reader;
 
         void  OnConnectionReceived(
             StreamSocketListener listener,
@@ -62,6 +63,7 @@ namespace RFCOMM_OBEX
             _provider.StopAdvertising();
             listener.Dispose();
             _socket = args.Socket;
+            var reader = new DataReader(_socket.InputStream);
 
             // The client socket is connected. At this point the App can wait for
             // the user to take some action, e.g. click a button to receive a file
@@ -71,92 +73,62 @@ namespace RFCOMM_OBEX
             // brevity.
         }
 
-        private async void ConnectSocket_Click(object sender, RoutedEventArgs e)
+
+
+        public async Task<FileDetail> ReadAsync()
         {
-        //    if (CoreApplication.Properties.ContainsKey("clientSocket"))
-        //    {
-        //        rootPage.NotifyUser(
-        //            "This step has already been executed. Please move to the next one.",
-        //            NotifyType.ErrorMessage);
-        //        return;
-        //    }
+            FileDetail fi = new FileDetail();
+            try
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    // Based on the protocol we've defined, the first uint is the size of the message
+                    uint readLength = await reader.LoadAsync(sizeof(uint));
 
-        //    if (String.IsNullOrEmpty(ServiceNameForConnect.Text))
-        //    {
-        //        rootPage.NotifyUser("Please provide a service name.", NotifyType.ErrorMessage);
-        //        return;
-        //    }
+                    // Check if the size of the data is expected (otherwise the remote has already terminated the connection)
+                    if (readLength < sizeof(uint))
+                    {
+                        //remoteDisconnection = true;
+                        return null;
+                    }
+                    uint currentLength = reader.ReadUInt32();
 
-        //    // By default 'HostNameForConnect' is disabled and host name validation is not required. When enabling the
-        //    // text box validating the host name is required since it was received from an untrusted source
-        //    // (user input). The host name is validated by catching ArgumentExceptions thrown by the HostName
-        //    // constructor for invalid input.
-        //    HostName hostName;
-        //    try
-        //    {
-        //        hostName = new HostName(HostNameForConnect.Text);
-        //    }
-        //    catch (ArgumentException)
-        //    {
-        //        rootPage.NotifyUser("Error: Invalid host name.", NotifyType.ErrorMessage);
-        //        return;
-        //    }
+                    // Load the rest of the message since you already know the length of the data expected.  
+                    readLength = await reader.LoadAsync(currentLength);
 
-        //    StreamSocket socket = new StreamSocket();
+                    // Check if the size of the data is expected (otherwise the remote has already terminated the connection)
+                    if (readLength < currentLength)
+                    {
+                        //remoteDisconnection = true;
+                        return null;
+                    }
+                    string message = reader.ReadString(currentLength);
+                    if (i == 0)
+                        fi.filename = message;
+                    else
+                        fi.txt = message;
+                }
+            }
+            // Catch exception HRESULT_FROM_WIN32(ERROR_OPERATION_ABORTED).
+            catch (Exception ex) when ((uint)ex.HResult == 0x800703E3)
+            {
+                //await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                //{
+                //    //MP.NotifyUser("Client Disconnected Successfully", NotifyType.StatusMessage);
+                //    status.Text = string.Format("{0}: {1}", MainPage.NotifyType.StatusMessage, "Client Disconnected Successfully");
+                //});
+                fi = null;
+            }
+            
 
-        //    // If necessary, tweak the socket's control options before carrying out the connect operation.
-        //    // Refer to the StreamSocketControl class' MSDN documentation for the full list of control options.
-        _socket.Control.KeepAlive = false;
-
-        //    // Save the socket, so subsequent steps can use it.
-        //    CoreApplication.Properties.Add("clientSocket", socket);
-        //    try
-        //    {
-        //        if (adapter == null)
-        //        {
-        //            rootPage.NotifyUser("Connecting to: " + HostNameForConnect.Text, NotifyType.StatusMessage);
-
-        //            // Connect to the server (by default, the listener we created in the previous step).
-        //            await socket.ConnectAsync(hostName, ServiceNameForConnect.Text);
-
-        //            rootPage.NotifyUser("Connected", NotifyType.StatusMessage);
-        //        }
-        //        else
-        //        {
-        //            rootPage.NotifyUser(
-        //                "Connecting to: " + HostNameForConnect.Text +
-        //                " using network adapter " + adapter.NetworkAdapterId,
-        //                NotifyType.StatusMessage);
-
-        //            // Connect to the server (by default, the listener we created in the previous step)
-        //            // limiting traffic to the same adapter that the user specified in the previous step.
-        //            // This option will be overridden by interfaces with weak-host or forwarding modes enabled.
-        //await _socket.ConnectAsync(
-        //    hostName,
-        //    ServiceNameForConnect.Text,
-        //    SocketProtectionLevel.PlainSocket,
-        //    adapter);
-        //    _socket.InputStream.
-
-        //            rootPage.NotifyUser(
-        //                "Connected using network adapter " + adapter.NetworkAdapterId,
-        //                NotifyType.StatusMessage);
-        //        }
-
-        //        // Mark the socket as connected. Set the value to null, as we care only about the fact that the 
-        //        // property is set.
-        //        CoreApplication.Properties.Add("connected", null);
-        //    }
-        //    catch (Exception exception)
-        //    {
-        //        // If this is an unknown status it means that the error is fatal and retry will likely fail.
-        //        if (SocketError.GetStatus(exception.HResult) == SocketErrorStatus.Unknown)
-        //        {
-        //            throw;
-        //        }
-
-        //        rootPage.NotifyUser("Connect failed with error: " + exception.Message, NotifyType.ErrorMessage);
-        //    }
+            reader.DetachStream();
+            return fi;
         }
+    }
+
+    public class FileDetail
+    {
+        public string filename { get; set; } = "";
+        public string txt { get; set; } = "";
     }
 }

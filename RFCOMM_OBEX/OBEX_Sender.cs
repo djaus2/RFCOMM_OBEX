@@ -118,7 +118,7 @@ Initialize()
             return false;
         }
 
-        public async Task Send(string stringToSend)
+        public async Task Send(string stringToSend, string filename)
         {
 
             // Create a DataWriter if we did not create one yet. Otherwise use one that is already cached.
@@ -132,7 +132,9 @@ Initialize()
             // Write first the length of the string as UINT32 value followed up by the string. 
 
             // Writing data to the writer will just store data in memory.
+            writer.WriteUInt32(writer.MeasureString(filename));
 
+            writer.WriteString(filename);
 
             writer.WriteUInt32(writer.MeasureString(stringToSend));
 
