@@ -5,7 +5,7 @@ Implements code from [docs.Microsoft.com-Bluetooth RFCOMM](https://docs.microsof
 Note includes corrections to code.
 
 # Usage
-- Build the app and run on two Windows 10 desktop targets. (To be tested on IoT Core).
+- Build the app and run on two Windows 10 desktop targets. (To be tested on IoT Core .. Doesn't work there .. suggestions welcome thx).
 - **FIRST** Press Recv on one target and choose file to Save As (This is a dummy, see Notes).
 - Press Send on the other instance of the app and choose a text file to send.
 
