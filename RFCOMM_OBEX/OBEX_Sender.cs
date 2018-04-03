@@ -31,10 +31,44 @@ namespace RFCOMM_OBEX
                         RfcommDeviceService.GetDeviceSelector(
                             RfcommServiceId.ObexObjectPush));
 
-                //Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection = 
-                //    await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
-                //        RfcommDeviceService.GetDeviceSelector(
-                //            RfcommServiceId.SerialPort));
+                int n = services.Count();
+
+                Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection1 =
+                    await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
+                        RfcommDeviceService.GetDeviceSelector(
+                            RfcommServiceId.SerialPort));
+
+                int n1 = DeviceInfoCollection1.Count();
+
+                Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection2 =
+                await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
+                RfcommDeviceService.GetDeviceSelector(
+                RfcommServiceId.GenericFileTransfer));
+
+                int n2 = DeviceInfoCollection2.Count();
+
+                Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection3 =
+                await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
+                RfcommDeviceService.GetDeviceSelector(
+                RfcommServiceId.ObexFileTransfer));
+
+                int n3 = DeviceInfoCollection3.Count();
+
+                Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection4 =
+                await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
+                RfcommDeviceService.GetDeviceSelector(
+                RfcommServiceId.PhoneBookAccessPce));
+
+                int n4 = DeviceInfoCollection4.Count();
+
+                Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection5 =
+                await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
+                RfcommDeviceService.GetDeviceSelector(
+                RfcommServiceId.PhoneBookAccessPse));
+
+                int n5 = DeviceInfoCollection5.Count();
+
+
 
                 //var rfcommProvider = 
                 //    await RfcommServiceProvider.CreateAsync(
