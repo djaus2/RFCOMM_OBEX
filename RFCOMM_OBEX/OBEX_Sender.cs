@@ -15,9 +15,9 @@ namespace RFCOMM_OBEX
         Windows.Devices.Bluetooth.Rfcomm.RfcommDeviceService _service;
         Windows.Networking.Sockets.StreamSocket _socket;
 
-        private void PostMessage(string msg)
+        private void PostMessage(string method, string msg)
         {
-            MainPage.root.PostMessage(msg);
+            MainPage.root.PostMessage(method, msg);
         }
 
         public async Task Initialize()
@@ -71,7 +71,7 @@ namespace RFCOMM_OBEX
             }
             catch (Exception ex)
             {
-                PostMessage(ex.Message);
+                PostMessage("OBEX_Sender.Initialize", ex.Message);
             }
         }
 
@@ -108,7 +108,7 @@ namespace RFCOMM_OBEX
             }
             catch (Exception ex)
             {
-                PostMessage(ex.Message); 
+                PostMessage("OBEX_Sender.SupportsProtection",ex.Message); 
             }
             return false;
         }
@@ -136,7 +136,7 @@ namespace RFCOMM_OBEX
                 }
             } catch (Exception ex)
             {
-                PostMessage(ex.Message);
+                PostMessage("OBEX_Sender.IsCompatibleVersion", ex.Message);
             }
             return false;
         }
@@ -165,7 +165,7 @@ namespace RFCOMM_OBEX
 
             catch (Exception ex)
             {
-                PostMessage(ex.Message);
+                PostMessage("OBEX_Sender.Send", ex.Message);
             }
         }
     }

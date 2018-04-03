@@ -52,7 +52,7 @@ namespace RFCOMM_OBEX
             }
             else
             {
-                PostMessage( "Operation cancelled.");
+                PostMessage("PickAFile","Operation cancelled.");
             }
             sndr = null;
         }
@@ -86,17 +86,17 @@ namespace RFCOMM_OBEX
                     await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
                 if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
                 {
-                    PostMessage( "File " + file.Name + " was saved.");
+                    PostMessage( "File " , file.Name + " was saved.");
                     
                 }
                 else
                 {
-                    PostMessage( "File " + file.Name + " couldn't be saved.");
+                    PostMessage( "File " , file.Name + " couldn't be saved.");
                 }
             }
             else
             {
-                PostMessage( "Operation cancelled.");
+                PostMessage("SaveAFile","Operation cancelled.");
             }
             rcvr = null;
         }
@@ -116,19 +116,21 @@ namespace RFCOMM_OBEX
 
         private  void Page_Loaded(object sender, RoutedEventArgs e)
         {
-
+            PostMessage("", "Ready");
         }
 
 
 
         public static MainPage root;
 
-        public void PostMessage(string msg)
+        public void PostMessage(string method,string msg)
         {
             var t = Task.Run(async () =>
                 {
                     await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
+                        if (method !="")
+                            this.Method.Text = method +":";
                         this.textBlock.Text = msg;
 
                     });

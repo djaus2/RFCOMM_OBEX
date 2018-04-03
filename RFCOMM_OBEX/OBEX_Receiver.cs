@@ -17,9 +17,9 @@ namespace RFCOMM_OBEX
         StreamSocket _socket = null;
         DataReader reader = null;
 
-        private void PostMessage(string msg)
+        private void PostMessage(string method, string msg)
         {
-            MainPage.root.PostMessage(msg);
+            MainPage.root.PostMessage(method,msg);
         }
 
         public async Task Initialize()
@@ -43,7 +43,7 @@ namespace RFCOMM_OBEX
             }
             catch (Exception ex)
             {
-                PostMessage(ex.Message);
+                PostMessage("OBEX_Receiver.Initialize", ex.Message);
             }
         }
 
@@ -67,7 +67,7 @@ namespace RFCOMM_OBEX
             }
             catch (Exception ex)
             { 
-                PostMessage(ex.Message);
+                PostMessage("OBEX_Receiver.InitializeServiceSdpAttributes", ex.Message);
             }
         }
 
@@ -92,7 +92,7 @@ namespace RFCOMM_OBEX
             }
             catch (Exception ex)
             { 
-                PostMessage(ex.Message);
+                PostMessage("OBEX_Receiver.OnConnectionReceived", ex.Message);
             }
         }
 
@@ -138,7 +138,7 @@ namespace RFCOMM_OBEX
             // Catch exception HRESULT_FROM_WIN32(ERROR_OPERATION_ABORTED).
             catch (Exception ex) when ((uint)ex.HResult == 0x800703E3)
             {
-                PostMessage(ex.Message);
+                PostMessage("OBEX_Receiver.ReadAsync", ex.Message);
                 fi = null;
             }
 
