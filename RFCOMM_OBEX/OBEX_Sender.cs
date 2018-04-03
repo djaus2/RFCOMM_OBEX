@@ -13,7 +13,8 @@ namespace RFCOMM_OBEX
     class OBEX_Sender
     {
         Windows.Devices.Bluetooth.Rfcomm.RfcommDeviceService _service;
-        Windows.Networking.Sockets.StreamSocket _socket;
+        Windows.Networking.Sockets.StreamSocket _socket=null;
+        private bool IsConnected = false;
 
         private void PostMessage(string method, string msg)
         {
@@ -54,12 +55,13 @@ namespace RFCOMM_OBEX
 
                         // Create a socket and connect to the target
                         _socket = new StreamSocket();
+                        IsConnected = false;
                         await _socket.ConnectAsync(
                             _service.ConnectionHostName,
                             _service.ConnectionServiceName,
                             SocketProtectionLevel
                                 .BluetoothEncryptionAllowNullAuthentication);
-
+                        IsConnected = true;
                         // The socket is connected. At this point the App can wait for
                         // the user to take some action, e.g. click a button to send a
                         // file to the device, which could invoke the Picker and then
@@ -148,6 +150,7 @@ namespace RFCOMM_OBEX
             {
                 // Create a DataWriter if we did not create one yet. Otherwise use one that is already cached.
                 DataWriter writer;
+                while (!IsConnected) ;
                 writer = new DataWriter(_socket.OutputStream);
 
 
