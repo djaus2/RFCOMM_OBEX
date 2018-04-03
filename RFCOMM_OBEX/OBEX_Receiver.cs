@@ -51,6 +51,7 @@ namespace RFCOMM_OBEX
         const uint SERVICE_VERSION_ATTRIBUTE_ID = 0x0300;
         const byte SERVICE_VERSION_ATTRIBUTE_TYPE = 0x0A;   // UINT32
         const uint SERVICE_VERSION = 200;
+        const uint MINIMUM_SERVICE_VERSION = 200;
         void InitializeServiceSdpAttributes(RfcommServiceProvider provider)
         {
             try
@@ -64,6 +65,27 @@ namespace RFCOMM_OBEX
 
                 var data = writer.DetachBuffer();
                 provider.SdpRawAttributes.Add(SERVICE_VERSION_ATTRIBUTE_ID, data);
+                //Check attributes
+                try
+                {
+                    var attributes = provider.SdpRawAttributes;
+                       // BluetoothCacheMode.Uncached);
+                    var attribute = attributes[SERVICE_VERSION_ATTRIBUTE_ID];
+                    var reader = DataReader.FromBuffer(attribute);
+
+                    // The first byte contains the attribute' s type
+                    byte attributeType = reader.ReadByte();
+                    if (attributeType == SERVICE_VERSION_ATTRIBUTE_TYPE)
+                    {
+                        // The remainder is the data
+                        uint version = reader.ReadUInt32();
+                        bool ret = ( version >= MINIMUM_SERVICE_VERSION);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    PostMessage("OBEX_Recv.InitializeServiceSdpAttributes_Check", ex.Message);
+                }
             }
             catch (Exception ex)
             { 

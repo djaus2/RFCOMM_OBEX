@@ -11,11 +11,17 @@
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <StackPanel>
             <StackPanel Orientation="Horizontal">
-        <Button Content="Send File" HorizontalAlignment="Left" Height="73" Margin="20,10,0,10" VerticalAlignment="Top" Width="295" Click="Button_Click"/>
-        <Button Content="Recv File" HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="327" Click="Button_Click_1"/>
-                </StackPanel>
-            <TextBlock x:Name="Method" HorizontalAlignment="Left" Height="100"  Margin="20,10,0,10" Text="TextBlock" TextWrapping="NoWrap" VerticalAlignment="Top" Width="200"/>
-            <TextBlock x:Name="textBlock" HorizontalAlignment="Left" Height="251"  Margin="20,10,0,10" Text="TextBlock" TextWrapping="Wrap" VerticalAlignment="Top" Width="702"/>
+                <Button Content="Send File" HorizontalAlignment="Left" Height="73" Margin="20,10,0,10" VerticalAlignment="Top" Width="295" Click="Button_Click"/>
+                <Button Content="Recv File" HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="327" Click="Button_Click_1"/>
+            </StackPanel>
+            <TextBlock x:Name="Method" HorizontalAlignment="Left" Height="100"  Margin="20,10,0,10" Text="" TextWrapping="NoWrap" VerticalAlignment="Top" Width="276"/>
+            <TextBlock x:Name="textBlock" HorizontalAlignment="Left" Height="251"  Margin="20,10,0,10" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="918"/>
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="Label1" Text="Recv Save As:" HorizontalAlignment="Left" Height="60"  Margin="20,10,0,10" TextWrapping="NoWrap" VerticalAlignment="Top" Width="200"/>
+                <TextBox x:Name="RecvFilename" Text="Temp" HorizontalAlignment="Left" Height="60" FontSize="24"  Margin="20,10,0,10"  TextWrapping="Wrap" VerticalAlignment="Top" Width="702"/>
+            </StackPanel>
         </StackPanel>
+
     </Grid>
 </Page>

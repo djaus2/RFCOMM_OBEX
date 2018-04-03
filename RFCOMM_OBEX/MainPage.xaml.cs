@@ -14,6 +14,7 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using RFCOMM_OBEX;
+using Windows.Storage.Pickers;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -34,50 +35,100 @@ namespace RFCOMM_OBEX
 
         private async Task PickAFile()
         {
-            sndr = new OBEX_Sender();
-            await sndr.Initialize();
-            var picker = new Windows.Storage.Pickers.FileOpenPicker();
-            picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail;
-            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
-            picker.FileTypeFilter.Add(".txt");
-
-            Windows.Storage.StorageFile file = await picker.PickSingleFileAsync();
-            if (file != null)
+            FileOpenPicker picker = null;
+#if IoTCore
+#else
+            picker = new Windows.Storage.Pickers.FileOpenPicker();
+#endif
+            if (picker != null)
             {
-                // Application now has read/write access to the picked file
-                this.textBlock.Text = "Picked textfile: " + file.Name;
-                txt = await Windows.Storage.FileIO.ReadTextAsync(file);
-                filename = file.Name;
-                await sndr.Send(txt, filename);
+                picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail;
+                picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
+                picker.FileTypeFilter.Add(".txt");
+
+                Windows.Storage.StorageFile file = await picker.PickSingleFileAsync();
+                if (file != null)
+                {
+                    PostMessage("Picked textfile:", file.Name + "\r\nReady");
+                    txt = await Windows.Storage.FileIO.ReadTextAsync(file);
+                    filename = file.Name;
+
+                    sndr = new OBEX_Sender();
+                    await sndr.Initialize();
+                    await sndr.Send(txt, filename);
+                    PostMessage("Picker Sent:", file.Name);
+                }
+                else
+                {
+                    PostMessage("PickAFile", "Operation cancelled.");
+                }
             }
             else
             {
-                PostMessage("PickAFile","Operation cancelled.");
+                await sndr.Send("Hello World", "Hi.txt");
+                PostMessage("Sent:", "Hi.Txt");
             }
             sndr = null;
         }
 
         private async Task SaveAFile(string txt)
         {
+            bool usedPicker = true;
             rcvr = new OBEX_Receiver();
             await rcvr.Initialize();
+            FileSavePicker savePicker = null;
+            Windows.Storage.StorageFile file = null;
 
-            var savePicker = new Windows.Storage.Pickers.FileSavePicker();
-            savePicker.SuggestedStartLocation =
-                Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-            // Dropdown of file types the user can save the file as
-            savePicker.FileTypeChoices.Add("Plain Text", new List<string>() { ".txt" });
-            // Default file name if the user does not type one in or select a file to replace
-            savePicker.SuggestedFileName = "New Document";
+#if IoTCore
+#else
+            savePicker = new Windows.Storage.Pickers.FileSavePicker();
+#endif
 
-            Windows.Storage.StorageFile file = await savePicker.PickSaveFileAsync();
+            if (savePicker != null)
+            {
+                savePicker.SuggestedStartLocation =
+                    Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+                // Dropdown of file types the user can save the file as
+                savePicker.FileTypeChoices.Add("Plain Text", new List<string>() { ".txt" });
+                // Default file name if the user does not type one in or select a file to replace
+                savePicker.SuggestedFileName = "New Document";
+
+                file = await savePicker.PickSaveFileAsync();
+                if (file == null)
+                {
+                    PostMessage("SaveAFile", "Operation cancelled.");
+                    rcvr = null;
+                    return;
+                }
+            }
+
+            FileDetail rcvFile = await rcvr.ReadAsync();
+            if (rcvFile == null)
+            {
+                PostMessage("SaveAFile", "Operation failed.");
+                rcvr = null;
+                return;
+            }
+
+            if (savePicker != null)
+            {              
+                 await file.RenameAsync(rcvFile.filename);
+            }
+            else
+            {
+                usedPicker = false;
+                Windows.Storage.StorageFolder storageFolder =
+                    Windows.Storage.ApplicationData.Current.LocalFolder;
+                file =
+                await storageFolder.CreateFileAsync(rcvFile.filename,
+                    Windows.Storage.CreationCollisionOption.ReplaceExisting);
+            }
             if (file != null)
             {
                 // Prevent updates to the remote version of the file until
                 // we finish making changes and call CompleteUpdatesAsync.
                 Windows.Storage.CachedFileManager.DeferUpdates(file);
                 // write to file
-                FileDetail rcvFile = await rcvr.ReadAsync();
                 await Windows.Storage.FileIO.WriteTextAsync(file, rcvFile.txt);
                 // Let Windows know that we're finished changing the file so
                 // the other app can update the remote version of the file.
@@ -86,18 +137,16 @@ namespace RFCOMM_OBEX
                     await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
                 if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
                 {
-                    PostMessage( "File " , file.Name + " was saved.");
+                    PostMessage( "File " , file.Name + " was saved in \r\n" + file.Path);
                     
                 }
                 else
                 {
                     PostMessage( "File " , file.Name + " couldn't be saved.");
                 }
+                
             }
-            else
-            {
-                PostMessage("SaveAFile","Operation cancelled.");
-            }
+
             rcvr = null;
         }
 
