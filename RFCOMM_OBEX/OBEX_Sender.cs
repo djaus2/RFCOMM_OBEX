@@ -89,6 +89,7 @@ namespace RFCOMM_OBEX
 
                         // Create a socket and connect to the target
                         _socket = new StreamSocket();
+                        PostMessage("OBEX_Sender.Initialize", "Connecting ...");
                         IsConnected = false;
                         await _socket.ConnectAsync(
                             _service.ConnectionHostName,
@@ -96,6 +97,7 @@ namespace RFCOMM_OBEX
                             SocketProtectionLevel
                                 .BluetoothEncryptionAllowNullAuthentication);
                         IsConnected = true;
+                        PostMessage("OBEX_Sender.Initialize", "Is Connected");
                         // The socket is connected. At this point the App can wait for
                         // the user to take some action, e.g. click a button to send a
                         // file to the device, which could invoke the Picker and then
@@ -104,6 +106,9 @@ namespace RFCOMM_OBEX
                         // brevity.
                     }
                 }
+                else
+                    PostMessage("OBEX_Sender.Initialize", "No Services");
+
             }
             catch (Exception ex)
             {
@@ -198,6 +203,7 @@ namespace RFCOMM_OBEX
 
                 // Write the locally buffered data to the network.
                 await writer.StoreAsync();
+                PostMessage("OBEX_Sender.Send", "Message Sent");
             }
 
             catch (Exception ex)

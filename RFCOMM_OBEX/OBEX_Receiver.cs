@@ -100,6 +100,7 @@ namespace RFCOMM_OBEX
         {
             try {
                 // Stop advertising/listening so that we're only serving one client
+                PostMessage("OBEX_Receiver.OnConnectionReceived", "Connection Received");
                 _provider.StopAdvertising();
                 listener.Dispose();
                 _socket = args.Socket;
