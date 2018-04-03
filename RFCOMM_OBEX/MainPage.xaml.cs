@@ -186,5 +186,10 @@ namespace RFCOMM_OBEX
                 });
             
         }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Exit();
+        }
     }
 }
