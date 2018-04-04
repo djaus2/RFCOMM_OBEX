@@ -14,12 +14,12 @@ namespace RFCOMM_OBEX
     class OBEX_Receiver
     {
         Windows.Devices.Bluetooth.Rfcomm.RfcommServiceProvider _provider;
-        StreamSocket _socket = null;
-        DataReader reader = null;
+        //StreamSocket _socket = null;
+        //DataReader reader = null;
 
         private void PostMessage(string method, string msg)
         {
-            MainPage.root.PostMessage(method,msg);
+            MainPage.root.PostMessage(method, msg);
         }
 
         public async Task Initialize()
@@ -28,7 +28,7 @@ namespace RFCOMM_OBEX
             {
                 // Initialize the provider for the hosted RFCOMM service
                 _provider = await Windows.Devices.Bluetooth.Rfcomm.RfcommServiceProvider.CreateAsync(RfcommServiceId.ObexObjectPush);
-                reader = null;
+                //reader = null;
                 // Create a listener for this service and start listening
                 StreamSocketListener listener = new StreamSocketListener();
                 listener.ConnectionReceived += OnConnectionReceived;
@@ -55,7 +55,7 @@ namespace RFCOMM_OBEX
         void InitializeServiceSdpAttributes(RfcommServiceProvider provider)
         {
             try
-            { 
+            {
                 var writer = new Windows.Storage.Streams.DataWriter();
 
                 // First write the attribute type
@@ -69,7 +69,7 @@ namespace RFCOMM_OBEX
                 try
                 {
                     var attributes = provider.SdpRawAttributes;
-                       // BluetoothCacheMode.Uncached);
+                    // BluetoothCacheMode.Uncached);
                     var attribute = attributes[SERVICE_VERSION_ATTRIBUTE_ID];
                     var reader = DataReader.FromBuffer(attribute);
 
@@ -79,7 +79,7 @@ namespace RFCOMM_OBEX
                     {
                         // The remainder is the data
                         uint version = reader.ReadUInt32();
-                        bool ret = ( version >= MINIMUM_SERVICE_VERSION);
+                        bool ret = (version >= MINIMUM_SERVICE_VERSION);
                     }
                 }
                 catch (Exception ex)
@@ -88,13 +88,13 @@ namespace RFCOMM_OBEX
                 }
             }
             catch (Exception ex)
-            { 
+            {
                 PostMessage("OBEX_Receiver.InitializeServiceSdpAttributes", ex.Message);
             }
         }
 
 
-        void  OnConnectionReceived(
+        void OnConnectionReceived(
             StreamSocketListener listener,
             StreamSocketListenerConnectionReceivedEventArgs args)
         {
@@ -102,9 +102,14 @@ namespace RFCOMM_OBEX
                 // Stop advertising/listening so that we're only serving one client
                 PostMessage("OBEX_Receiver.OnConnectionReceived", "Connection Received");
                 _provider.StopAdvertising();
-                listener.Dispose();
-                _socket = args.Socket;
-                reader = new DataReader(_socket.InputStream);
+                //listener.Dispose();
+                StreamSocket _socket = args.Socket;
+
+                var t = Task.Run(async () =>
+                {
+                    await ReadAsync(_socket);
+                });
+
 
                 // The client socket is connected. At this point the App can wait for
                 // the user to take some action, e.g. click a button to receive a file
@@ -114,63 +119,88 @@ namespace RFCOMM_OBEX
                 // brevity.
             }
             catch (Exception ex)
-            { 
+            {
                 PostMessage("OBEX_Receiver.OnConnectionReceived", ex.Message);
             }
         }
 
 
-
-        public async Task<FileDetail> ReadAsync()
+        public static bool Connected {get; set;}= true;
+        public async Task ReadAsync(StreamSocket _socket)
         {
             FileDetail fi = new FileDetail();
-            try { 
-                //Wait for connection
-                while(reader == null);
-                
-                //Read filename then file contents
-                for (int i = 0; i < 2; i++)
-                {
-                    // Based on the protocol we've defined, the first uint is the size of the message
-                    uint readLength = await reader.LoadAsync(sizeof(uint));
-
-                    // Check if the size of the data is expected (otherwise the remote has already terminated the connection)
-                    if (readLength < sizeof(uint))
-                    {
-                        //remoteDisconnection = true;
-                        return null;
-                    }
-                    uint currentLength = reader.ReadUInt32();
-
-                    // Load the rest of the message since you already know the length of the data expected.  
-                    readLength = await reader.LoadAsync(currentLength);
-
-                    // Check if the size of the data is expected (otherwise the remote has already terminated the connection)
-                    if (readLength < currentLength)
-                    {
-                        //remoteDisconnection = true;
-                        return null;
-                    }
-                    string message = reader.ReadString(currentLength);
-                    if (i == 0)
-                        fi.filename = message;
-                    else
-                        fi.txt = message;
-                }
-            }
-            // Catch exception HRESULT_FROM_WIN32(ERROR_OPERATION_ABORTED).
-            catch (Exception ex) when ((uint)ex.HResult == 0x800703E3)
+            Connected = true;
+            MainPage.root.RecvConnected = true;
+            using (DataReader reader = new DataReader(_socket.InputStream))
             {
-                PostMessage("OBEX_Receiver.ReadAsync", ex.Message);
-                fi = null;
+                try
+                {
+                    while (Connected)
+                    {
+                        //Read filename then file contents
+                        for (int i = 0; (i < 2) && Connected; i++)
+                        {
+                            if (_socket == null)
+                                Connected = false;
+                            else if (_socket.InputStream == null)
+                                Connected = false; ;
+
+                            if (Connected)
+                            {
+                                // Based on the protocol we've defined, the first uint is the size of the message
+                                uint readLength = await reader.LoadAsync(sizeof(uint));
+
+                                // Check if the size of the data is expected (otherwise the remote has already terminated the connection)
+                                if (readLength < sizeof(uint))
+                                {
+                                    //remoteDisconnection = true;
+                                    Connected = false;
+                                }
+                                else
+                                {
+                                    uint currentLength = reader.ReadUInt32();
+
+                                    // Load the rest of the message since you already know the length of the data expected.  
+                                    readLength = await reader.LoadAsync(currentLength);
+
+                                    // Check if the size of the data is expected (otherwise the remote has already terminated the connection)
+                                    if (readLength < currentLength)
+                                    {
+                                        Connected = false;
+                                    }
+                                    else
+                                    {
+                                        string message = reader.ReadString(currentLength);
+                                        if (message == FileDetail.EndTransmission)
+                                            Connected = false;
+                                        else
+                                        {
+                                            if (i == 0)
+                                                fi.filename = message;
+                                            else
+                                            {
+                                                fi.txt = message;
+                                                MainPage.root.SaveFile(fi);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // Catch exception HRESULT_FROM_WIN32(ERROR_OPERATION_ABORTED).
+                catch (Exception ex) when ((uint)ex.HResult == 0x800703E3)
+                {
+                    PostMessage("OBEX_Receiver.ReadAsync", ex.Message);
+                    fi = null;
+                    Connected = false;
+                }
+                reader.DetachStream();               
             }
-
-
-            reader.DetachStream();
-            return fi;
+            MainPage.root.RecvConnected = false; 
+            if (_socket != null)
+                _socket.Dispose();
         }
-
-
     }
-
 }

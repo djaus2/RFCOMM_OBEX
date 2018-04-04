@@ -8,6 +8,7 @@ namespace RFCOMM_OBEX
 {
     public class FileDetail
     {
+        public const string EndTransmission = "__DONE__";
         public string filename { get; set; } = "";
         public string txt { get; set; } = "";
     }

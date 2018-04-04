@@ -53,8 +53,7 @@ namespace RFCOMM_OBEX
                     txt = await Windows.Storage.FileIO.ReadTextAsync(file);
                     filename = file.Name;
 
-                    sndr = new OBEX_Sender();
-                    await sndr.Initialize();
+
                     await sndr.Send(txt, filename);
                     PostMessage("Picker Sent:", file.Name);
                 }
@@ -71,83 +70,140 @@ namespace RFCOMM_OBEX
             sndr = null;
         }
 
-        private async Task SaveAFile(string txt)
+//        private async Task SaveAFile(string txt)
+//        {
+//            bool usedPicker = true;
+
+//            FileSavePicker savePicker = null;
+//            Windows.Storage.StorageFile file = null;
+
+//#if IoTCore
+//#else
+//            savePicker = new Windows.Storage.Pickers.FileSavePicker();
+//#endif
+
+//            if (savePicker != null)
+//            {
+//                savePicker.SuggestedStartLocation =
+//                    Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+//                // Dropdown of file types the user can save the file as
+//                savePicker.FileTypeChoices.Add("Plain Text", new List<string>() { ".txt" });
+//                // Default file name if the user does not type one in or select a file to replace
+//                savePicker.SuggestedFileName = "New Document";
+
+//                file = await savePicker.PickSaveFileAsync();
+//                if (file == null)
+//                {
+//                    PostMessage("SaveAFile", "Operation cancelled.");
+//                    rcvr = null;
+//                    return;
+//                }
+//            }
+
+//            FileDetail rcvFile = await rcvr.ReadAsync();
+//            if (rcvFile == null)
+//            {
+//                PostMessage("SaveAFile", "Operation failed.");
+//                rcvr = null;
+//                return;
+//            }
+
+//            if (savePicker != null)
+//            {              
+//                 await file.RenameAsync(rcvFile.filename);
+//            }
+//            else
+//            {
+//                usedPicker = false;
+//                Windows.Storage.StorageFolder storageFolder =
+//                    Windows.Storage.ApplicationData.Current.LocalFolder;
+//                file =
+//                await storageFolder.CreateFileAsync(rcvFile.filename,
+//                    Windows.Storage.CreationCollisionOption.ReplaceExisting);
+//            }
+//            if (file != null)
+//            {
+//                // Prevent updates to the remote version of the file until
+//                // we finish making changes and call CompleteUpdatesAsync.
+//                Windows.Storage.CachedFileManager.DeferUpdates(file);
+//                // write to file
+//                await Windows.Storage.FileIO.WriteTextAsync(file, rcvFile.txt);
+//                // Let Windows know that we're finished changing the file so
+//                // the other app can update the remote version of the file.
+//                // Completing updates may require Windows to ask for user input.
+//                Windows.Storage.Provider.FileUpdateStatus status =
+//                    await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
+//                if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
+//                {
+//                    PostMessage( "File " , file.Name + " was saved in \r\n" + file.Path);
+                    
+//                }
+//                else
+//                {
+//                    PostMessage( "File " , file.Name + " couldn't be saved.");
+//                }
+                
+//            }
+
+//            rcvr = null;
+//        }
+
+        private async Task SaveAFile2(FileDetail rcvFile)
         {
-            bool usedPicker = true;
-            rcvr = new OBEX_Receiver();
-            await rcvr.Initialize();
+
             FileSavePicker savePicker = null;
             Windows.Storage.StorageFile file = null;
 
-#if IoTCore
-#else
             savePicker = new Windows.Storage.Pickers.FileSavePicker();
-#endif
 
-            if (savePicker != null)
+
+
+            savePicker.SuggestedStartLocation =
+                Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            // Dropdown of file types the user can save the file as
+            savePicker.FileTypeChoices.Add("Plain Text", new List<string>() { ".txt" });
+            // Default file name if the user does not type one in or select a file to replace
+            savePicker.SuggestedFileName = "New Document";
+
+            file = await savePicker.PickSaveFileAsync();
+            if (file == null)
             {
-                savePicker.SuggestedStartLocation =
-                    Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-                // Dropdown of file types the user can save the file as
-                savePicker.FileTypeChoices.Add("Plain Text", new List<string>() { ".txt" });
-                // Default file name if the user does not type one in or select a file to replace
-                savePicker.SuggestedFileName = "New Document";
-
-                file = await savePicker.PickSaveFileAsync();
-                if (file == null)
-                {
-                    PostMessage("SaveAFile", "Operation cancelled.");
-                    rcvr = null;
-                    return;
-                }
-            }
-
-            FileDetail rcvFile = await rcvr.ReadAsync();
-            if (rcvFile == null)
-            {
-                PostMessage("SaveAFile", "Operation failed.");
-                rcvr = null;
+                PostMessage("SaveAFile", "Operation cancelled.");
                 return;
             }
+            
 
-            if (savePicker != null)
-            {              
-                 await file.RenameAsync(rcvFile.filename);
+            await file.RenameAsync(rcvFile.filename);
+
+
+            // Prevent updates to the remote version of the file until
+            // we finish making changes and call CompleteUpdatesAsync.
+            Windows.Storage.CachedFileManager.DeferUpdates(file);
+            // write to file
+            await Windows.Storage.FileIO.WriteTextAsync(file, rcvFile.txt);
+            // Let Windows know that we're finished changing the file so
+            // the other app can update the remote version of the file.
+            // Completing updates may require Windows to ask for user input.
+            Windows.Storage.Provider.FileUpdateStatus status =
+                await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
+            if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
+            {
+                PostMessage("File ", file.Name + " was saved in \r\n" + file.Path);
+
             }
             else
             {
-                usedPicker = false;
-                Windows.Storage.StorageFolder storageFolder =
-                    Windows.Storage.ApplicationData.Current.LocalFolder;
-                file =
-                await storageFolder.CreateFileAsync(rcvFile.filename,
-                    Windows.Storage.CreationCollisionOption.ReplaceExisting);
-            }
-            if (file != null)
-            {
-                // Prevent updates to the remote version of the file until
-                // we finish making changes and call CompleteUpdatesAsync.
-                Windows.Storage.CachedFileManager.DeferUpdates(file);
-                // write to file
-                await Windows.Storage.FileIO.WriteTextAsync(file, rcvFile.txt);
-                // Let Windows know that we're finished changing the file so
-                // the other app can update the remote version of the file.
-                // Completing updates may require Windows to ask for user input.
-                Windows.Storage.Provider.FileUpdateStatus status =
-                    await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
-                if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
-                {
-                    PostMessage( "File " , file.Name + " was saved in \r\n" + file.Path);
-                    
-                }
-                else
-                {
-                    PostMessage( "File " , file.Name + " couldn't be saved.");
-                }
-                
+                PostMessage("File ", file.Name + " couldn't be saved.");
             }
 
-            rcvr = null;
+        }
+
+        internal async void SaveFile(FileDetail rcvFile)
+        {
+            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+            {
+                await SaveAFile2(rcvFile);
+            });
         }
 
         string txt { get; set; } = "";
@@ -158,14 +214,44 @@ namespace RFCOMM_OBEX
             await PickAFile();
         }
 
-        private async void Button_Click_1(object sender, RoutedEventArgs e)
+        private  void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            await SaveAFile(txt);
+            OBEX_Receiver.Connected = false;
         }
 
-        private  void Page_Loaded(object sender, RoutedEventArgs e)
+        private  async void Page_Loaded(object sender, RoutedEventArgs e)
         {
+            rcvr = new OBEX_Receiver();
+            await rcvr.Initialize();
+
+            sndr = new OBEX_Sender();
+            await sndr.Initialize();
+
+
             PostMessage("", "Ready");
+        }
+
+        public bool RecvConnected
+        {
+            set
+            {
+                var t = Task.Run(async () =>
+                {
+                    await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        if (value)
+                        {
+                            Connected.Text = "Recv Connected";
+                            Button_Recv_Disconnect.IsEnabled = true;
+                        }
+                        else
+                        {
+                            Connected.Text = "";
+                            Button_Recv_Disconnect.IsEnabled = false;
+                        }
+                    });
+                });
+            }
         }
 
 
