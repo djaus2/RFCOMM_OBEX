@@ -11,13 +11,14 @@
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <StackPanel>
             <StackPanel Orientation="Horizontal">
-                <Button Content="Send File" HorizontalAlignment="Left" Height="73" Margin="20,10,0,10" VerticalAlignment="Top" Width="295" Click="Button_Click"/>
+                <Button Content="Send File" HorizontalAlignment="Left" Height="73" Margin="20,10,0,10" VerticalAlignment="Top" Width="150" Click="Button_Click"/>
                 <Button x:Name="Button_Recv_Disconnect" Content="Recv Disconnect" IsEnabled="False"
-                         HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="327" Click="Button_Click_1"/>
-                <Button Content="Exit" HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="327" Click="Button_Click_2"/>
-                <TextBlock x:Name="Connected" HorizontalAlignment="Left" Height="100"  Margin="20,10,0,10" Text="" TextWrapping="NoWrap" VerticalAlignment="Top" Width="276"/>
+                         HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="150" Click="Button_Click_1"/>
+                <Button Content="Set Recv Folder" HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="150" Click="Button_Click_3"/>
+                <Button Content="Exit" HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="150" Click="Button_Click_2"/>
             </StackPanel>
-            <TextBlock x:Name="Method" HorizontalAlignment="Left" Height="100"  Margin="20,10,0,10" Text="" TextWrapping="NoWrap" VerticalAlignment="Top" Width="276"/>
+            <TextBlock x:Name="Connected" HorizontalAlignment="Left" Height="60"  Margin="20,10,0,10" Text="" TextWrapping="NoWrap" VerticalAlignment="Top" Width="276"/>
+            <TextBlock x:Name="Method" HorizontalAlignment="Left" Height="60"  Margin="20,10,0,10" Text="" TextWrapping="NoWrap" VerticalAlignment="Top" Width="276"/>
             <TextBlock x:Name="textBlock" HorizontalAlignment="Left" Height="251"  Margin="20,10,0,10" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="918"/>
 
             <StackPanel Orientation="Horizontal">

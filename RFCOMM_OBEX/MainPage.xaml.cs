@@ -198,6 +198,46 @@ namespace RFCOMM_OBEX
 
         }
 
+        Windows.Storage.StorageFolder RecvFolder = null;
+
+        private async Task SaveAFile3(FileDetail rcvFile)
+        {
+            if (RecvFolder==null)
+            {
+                PostMessage("SaveAFile3", "Operation cancelled as no Recv folder.");
+                return;
+            }
+            Windows.Storage.StorageFile file =  await RecvFolder.CreateFileAsync(rcvFile.filename,Windows.Storage.CreationCollisionOption.GenerateUniqueName);
+ 
+            if (file == null)
+            {
+                PostMessage("SaveAFile3", "Operation cancelled as failed to create file.");
+                return;
+            }
+
+
+            // Prevent updates to the remote version of the file until
+            // we finish making changes and call CompleteUpdatesAsync.
+            Windows.Storage.CachedFileManager.DeferUpdates(file);
+            // write to file
+            await Windows.Storage.FileIO.WriteTextAsync(file, rcvFile.txt);
+            // Let Windows know that we're finished changing the file so
+            // the other app can update the remote version of the file.
+            // Completing updates may require Windows to ask for user input.
+            Windows.Storage.Provider.FileUpdateStatus status =
+                await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
+            if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
+            {
+                PostMessage("File ", file.Name + " was saved in \r\n" + file.Path);
+
+            }
+            else
+            {
+                PostMessage("File ", file.Name + " couldn't be saved.");
+            }
+
+        }
+
         internal async void SaveFile(FileDetail rcvFile)
         {
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
@@ -276,6 +316,27 @@ namespace RFCOMM_OBEX
         private void Button_Click_2(object sender, RoutedEventArgs e)
         {
             Application.Current.Exit();
+        }
+
+        private async void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            FolderPicker picker = new FolderPicker();
+            picker.FileTypeFilter.Add("*");
+            picker.ViewMode = PickerViewMode.List;
+            picker.SuggestedStartLocation = PickerLocationId.Downloads;
+            RecvFolder= await picker.PickSingleFolderAsync();
+            if (RecvFolder != null)
+            {
+                // Application now has read/write access to all contents in the picked folder
+                // (including other sub-folder contents)
+                Windows.Storage.AccessCache.StorageApplicationPermissions.
+                FutureAccessList.AddOrReplace("PickedFolderToken", RecvFolder);
+                PostMessage ("Picked folder: " , RecvFolder.Path);
+            }
+            else
+            {
+                PostMessage("Pick Folder", "Operation cancelled");
+            }
         }
     }
 }
