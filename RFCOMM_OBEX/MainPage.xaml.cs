@@ -52,10 +52,12 @@ namespace RFCOMM_OBEX
                     PostMessage("Picked textfile:", file.Name + "\r\nReady");
                     txt = await Windows.Storage.FileIO.ReadTextAsync(file);
                     filename = file.Name;
-
-
-                    await sndr.Send(txt, filename);
-                    PostMessage("Picker Sent:", file.Name);
+                 
+                    var t = Task.Run(async () =>
+                    {
+                        await sndr.Send(txt, filename);
+                    });
+                    PostMessage("Picker sending", file.Name);
                 }
                 else
                 {
