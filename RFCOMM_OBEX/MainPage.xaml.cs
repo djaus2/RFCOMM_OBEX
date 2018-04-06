@@ -25,16 +25,21 @@ namespace RFCOMM_OBEX
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        private OBEX_Sender sndr;
-        private OBEX_Receiver rcvr;
+        private OBEX_Sender sndr= null;
+        private OBEX_Receiver rcvr= null;
         public MainPage()
         {
             this.InitializeComponent();
             root = this;
         }
 
-        private async Task PickAFile()
+        private async Task SendAFile()
         {
+            if (sndr == null)
+            {
+                sndr = new OBEX_Sender();
+            }
+
             FileOpenPicker picker = null;
 #if IoTCore
 #else
@@ -69,7 +74,8 @@ namespace RFCOMM_OBEX
                 await sndr.Send("Hello World", "Hi.txt");
                 PostMessage("Sent:", "Hi.Txt");
             }
-            sndr = null;
+            if (sndr != null)
+                sndr.Dispose();
         }
 
 //        private async Task SaveAFile(string txt)
@@ -253,7 +259,7 @@ namespace RFCOMM_OBEX
 
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            await PickAFile();
+            await SendAFile();
         }
 
         private  void Button_Click_1(object sender, RoutedEventArgs e)
@@ -261,16 +267,12 @@ namespace RFCOMM_OBEX
             OBEX_Receiver.Connected = false;
         }
 
-        private  async void Page_Loaded(object sender, RoutedEventArgs e)
+        private   void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            rcvr = new OBEX_Receiver();
-            await rcvr.Initialize();
-
-            sndr = new OBEX_Sender();
-            await sndr.Initialize();
 
 
-            PostMessage("", "Ready");
+
+            //PostMessage("", "Ready");
         }
 
         public bool RecvConnected
@@ -306,10 +308,7 @@ namespace RFCOMM_OBEX
                 {
                     await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        if (method !="")
-                            this.Method.Text = method +":";
-                        this.textBlock.Text = msg;
-
+                        this.textBlock.Items.Insert(0,string.Format("{0} {1}", method, msg));
                     });
                 });
             
@@ -317,11 +316,25 @@ namespace RFCOMM_OBEX
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
         {
+            if (sndr != null)
+            {
+                sndr.Dispose();
+                sndr = null;
+            }
+            if (rcvr != null)
+            {
+                rcvr = null;
+            }
             Application.Current.Exit();
         }
 
         private async void Button_Click_3(object sender, RoutedEventArgs e)
         {
+
+
+            rcvr = new OBEX_Receiver();
+            await rcvr.Initialize();
+
             FolderPicker picker = new FolderPicker();
             picker.FileTypeFilter.Add("*");
             picker.ViewMode = PickerViewMode.List;
@@ -339,6 +352,11 @@ namespace RFCOMM_OBEX
             {
                 PostMessage("Pick Folder", "Operation cancelled");
             }
+        }
+
+        private void AttributeChk_Checked(object sender, RoutedEventArgs e)
+        {
+            OBEX_Sender.IgnoreAttributeErrors = (AttributeChk.IsChecked == true);
         }
     }
 }

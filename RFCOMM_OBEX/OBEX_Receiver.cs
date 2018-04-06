@@ -17,6 +17,11 @@ namespace RFCOMM_OBEX
         //StreamSocket _socket = null;
         //DataReader reader = null;
 
+        ~OBEX_Receiver()
+        {
+            
+        }
+
         private void PostMessage(string method, string msg)
         {
             MainPage.root.PostMessage(method, msg);

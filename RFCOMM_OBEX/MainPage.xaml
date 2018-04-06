@@ -17,9 +17,10 @@
                 <Button Content="Set Recv Folder" HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="150" Click="Button_Click_3"/>
                 <Button Content="Exit" HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="150" Click="Button_Click_2"/>
             </StackPanel>
-            <TextBlock x:Name="Connected" HorizontalAlignment="Left" Height="60"  Margin="20,10,0,10" Text="" TextWrapping="NoWrap" VerticalAlignment="Top" Width="276"/>
-            <TextBlock x:Name="Method" HorizontalAlignment="Left" Height="60"  Margin="20,10,0,10" Text="" TextWrapping="NoWrap" VerticalAlignment="Top" Width="276"/>
-            <TextBlock x:Name="textBlock" HorizontalAlignment="Left" Height="251"  Margin="20,10,0,10" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="918"/>
+            <CheckBox x:Name="AttributeChk" Content="Ignore Attribute Errors" IsChecked="False" Checked="AttributeChk_Checked"></CheckBox>
+            <TextBlock x:Name="Connected" HorizontalAlignment="Left" Height="40"  Margin="20,4,0,4" Text="" TextWrapping="NoWrap" VerticalAlignment="Top" Width="276"/>
+            <TextBlock x:Name="Method" Text="Log:" HorizontalAlignment="Left" Height="40"  Margin="20,4,0,4" TextWrapping="NoWrap" VerticalAlignment="Top" Width="276"/>
+            <ListBox x:Name="textBlock" HorizontalAlignment="Left" Height="200"  Margin="20,4,0,3"  VerticalAlignment="Top" Width="918"/>
 
             <StackPanel Orientation="Horizontal">
                 <TextBlock x:Name="Label1" Text="Recv Save As:" HorizontalAlignment="Left" Height="60"  Margin="20,10,0,10" TextWrapping="NoWrap" VerticalAlignment="Top" Width="200"/>

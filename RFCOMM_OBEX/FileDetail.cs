@@ -9,6 +9,8 @@ namespace RFCOMM_OBEX
     public class FileDetail
     {
         public const string EndTransmission = "__DONE__";
+
+        public const double Timeout  = 30;
         public string filename { get; set; } = "";
         public string txt { get; set; } = "";
     }

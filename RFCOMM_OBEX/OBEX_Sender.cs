@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Rfcomm;
@@ -10,10 +11,10 @@ using Windows.Storage.Streams;
 
 namespace RFCOMM_OBEX
 {
-    class OBEX_Sender
+    class OBEX_Sender: IDisposable
     {
         Windows.Devices.Bluetooth.Rfcomm.RfcommDeviceService _service;
-        Windows.Networking.Sockets.StreamSocket _socket=null;
+       
         private bool IsConnected = false;
 
         private void PostMessage(string method, string msg)
@@ -21,8 +22,9 @@ namespace RFCOMM_OBEX
             MainPage.root.PostMessage(method, msg);
         }
 
-        public async Task Initialize()
+        public async Task<StreamSocket> InitializeSendSocket()
         {
+            Windows.Networking.Sockets.StreamSocket _socket = null;
             try
             {
                 // Enumerate devices with the object push service
@@ -31,50 +33,7 @@ namespace RFCOMM_OBEX
                         RfcommDeviceService.GetDeviceSelector(
                             RfcommServiceId.ObexObjectPush));
 
-                int n = services.Count();
-
-                Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection1 =
-                    await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
-                        RfcommDeviceService.GetDeviceSelector(
-                            RfcommServiceId.SerialPort));
-
-                int n1 = DeviceInfoCollection1.Count();
-
-                Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection2 =
-                await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
-                RfcommDeviceService.GetDeviceSelector(
-                RfcommServiceId.GenericFileTransfer));
-
-                int n2 = DeviceInfoCollection2.Count();
-
-                Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection3 =
-                await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
-                RfcommDeviceService.GetDeviceSelector(
-                RfcommServiceId.ObexFileTransfer));
-
-                int n3 = DeviceInfoCollection3.Count();
-
-                Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection4 =
-                await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
-                RfcommDeviceService.GetDeviceSelector(
-                RfcommServiceId.PhoneBookAccessPce));
-
-                int n4 = DeviceInfoCollection4.Count();
-
-                Windows.Devices.Enumeration.DeviceInformationCollection DeviceInfoCollection5 =
-                await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
-                RfcommDeviceService.GetDeviceSelector(
-                RfcommServiceId.PhoneBookAccessPse));
-
-                int n5 = DeviceInfoCollection5.Count();
-
-
-
-                //var rfcommProvider = 
-                //    await RfcommServiceProvider.CreateAsync(
-                //        RfcommServiceId.FromUuid(Constants.RfcommChatServiceUuid));
-
-
+                PostMessage("OBEX_Sender.Initialize", string.Format("Services count = {0}", services.Count));
 
                 if (services.Count > 0)
                 {
@@ -83,6 +42,11 @@ namespace RFCOMM_OBEX
 
                     // Check that the service meets this App's minimum requirement
                     bool isCompatible = await IsCompatibleVersion(service);
+                    if ((IgnoreAttributeErrors) && (!isCompatible))
+                    {
+                        PostMessage("OBEX_Sender.Initialize", "Ignoring attribute error.");
+                        isCompatible = true;
+                    }
                     if (SupportsProtection(service) && isCompatible)
                     {
                         _service = service;
@@ -105,15 +69,30 @@ namespace RFCOMM_OBEX
                         // Sockets API and not the Rfcomm API, and so is omitted here for
                         // brevity.
                     }
+                    else
+                    {
+                        IsConnected = false;
+                        if (_socket != null)
+                            _socket.Dispose();
+                        PostMessage("OBEX_Sender.Initialize", "Service Not Compatible Or does not Support Protection Level ");
+                    }
                 }
                 else
+                {
+                    IsConnected = false;
+                    if (_socket != null)
+                        _socket.Dispose();
                     PostMessage("OBEX_Sender.Initialize", "No Services");
+                }
 
             }
             catch (Exception ex)
             {
+                if (_socket != null)
+                    _socket.Dispose();
                 PostMessage("OBEX_Sender.Initialize", ex.Message);
             }
+            return _socket;
         }
 
         // This App requires a connection that is encrypted but does not care about
@@ -164,16 +143,28 @@ namespace RFCOMM_OBEX
             {
                 var attributes = await service.GetSdpRawAttributesAsync(
                     BluetoothCacheMode.Uncached);
-                var attribute = attributes[SERVICE_VERSION_ATTRIBUTE_ID];
-                var reader = DataReader.FromBuffer(attribute);
-
-                // The first byte contains the attribute' s type
-                byte attributeType = reader.ReadByte();
-                if (attributeType == SERVICE_VERSION_ATTRIBUTE_TYPE)
+                if (attributes != null)
                 {
-                    // The remainder is the data
-                    uint version = reader.ReadUInt32();
-                    return version >= MINIMUM_SERVICE_VERSION;
+                    var lst = attributes.Keys.ToList<uint>();
+                    if (attributes.Keys.Contains(SERVICE_VERSION_ATTRIBUTE_ID))
+                    {
+                        var attribute = attributes[SERVICE_VERSION_ATTRIBUTE_ID];
+                        var reader = DataReader.FromBuffer(attribute);
+
+                        // The first byte contains the attribute' s type
+                        byte attributeType = reader.ReadByte();
+                        if (attributeType == SERVICE_VERSION_ATTRIBUTE_TYPE)
+                        {
+                            // The remainder is the data
+                            uint version = reader.ReadUInt32();
+                            return version >= MINIMUM_SERVICE_VERSION;
+                        }
+                    }
+                    else
+                    {
+                        PostMessage("OBEX_Sender.IsCompatibleVersion", string.Format("Service Attribute Count: {0}", attributes.Count()));
+                        PostMessage("OBEX_Sender.IsCompatibleVersion", "SERVICE_VERSION_ATTRIBUTE_ID not in Service Attributes");
+                    }
                 }
             } catch (Exception ex)
             {
@@ -185,31 +176,97 @@ namespace RFCOMM_OBEX
         public async Task Send(string stringToSend, string filename)
         {
             try
-
             {
-                // Create a DataWriter if we did not create one yet. Otherwise use one that is already cached.
-                DataWriter writer;
-                while (!IsConnected) ;
-                writer = new DataWriter(_socket.OutputStream);
-
-
-                // Write first the length of the string as UINT32 value followed up by the string. 
-
-                // Writing filename and file contents data to the writer will just store data in memory.
-                writer.WriteUInt32(writer.MeasureString(filename));
-                writer.WriteString(filename);
-                writer.WriteUInt32(writer.MeasureString(stringToSend));
-                writer.WriteString(stringToSend);
-
-                // Write the locally buffered data to the network.
-                await writer.StoreAsync();
-                PostMessage("OBEX_Sender.Send", "Message Sent");
-            }
-
-            catch (Exception ex)
+                CancellationTokenSource source = new CancellationTokenSource();
+                source.CancelAfter(TimeSpan.FromSeconds(FileDetail.Timeout));
+                Task task = Task.Run(() => SendWithCancel(stringToSend, filename, source.Token), source.Token);
+                await task;
+            } catch (TaskCanceledException ex)
             {
-                PostMessage("OBEX_Sender.Send", ex.Message);
+                PostMessage("OBEX_Sender.Send", "Was cancelled or timed out");
             }
         }
+
+        public async Task SendWithCancel(string stringToSend, string filename, CancellationToken cancellationToken)
+        {
+            StreamSocket _socket =  await InitializeSendSocket();
+
+            if (_socket == null)
+            {
+                PostMessage("OBEX_Sender.Send", "Not connected");
+            }
+            else
+            {
+                try
+                {
+                    // Create a DataWriter if we did not create one yet. Otherwise use one that is already cached.
+                    using (DataWriter writer = new DataWriter(_socket.OutputStream))
+                    {
+                        // Write first the length of the string as UINT32 value followed up by the string. 
+
+                        // Writing filename and file contents data to the writer will just store data in memory.
+                        writer.WriteUInt32(writer.MeasureString(filename));
+                        writer.WriteString(filename);
+                        writer.WriteUInt32(writer.MeasureString(stringToSend));
+                        writer.WriteString(stringToSend);
+
+                        // Write the locally buffered data to the network.
+                        await writer.StoreAsync();
+                        await _socket.OutputStream.FlushAsync();
+                        writer.DetachStream();
+                        PostMessage("OBEX_Sender.Send", "Message Sent");
+                    }
+                    _socket.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    if (_socket != null)
+                        _socket.Dispose();
+                    PostMessage("OBEX_Sender.Send", ex.Message);
+                }
+                _socket = null;
+            }
+        }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        public static bool IgnoreAttributeErrors { get; internal set; } = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                    if (IsConnected)
+                    {
+                        IsConnected = false;
+                    }
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~OBEX_Sender() {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }
