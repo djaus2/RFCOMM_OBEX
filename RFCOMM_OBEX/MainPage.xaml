@@ -14,7 +14,7 @@
                 <Button Content="Send File" HorizontalAlignment="Left" Height="73" Margin="20,10,0,10" VerticalAlignment="Top" Width="150" Click="Button_Click"/>
                 <Button x:Name="Button_Recv_Disconnect" Content="Recv Disconnect" IsEnabled="False"
                          HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="150" Click="Button_Click_1"/>
-                <Button Content="Set Recv Folder" HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="150" Click="Button_Click_3"/>
+                <Button x:Name="BtnRecv" Content="Enable Recv" HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="150" Click="Button_Click_3"/>
                 <Button Content="Exit" HorizontalAlignment="Left" Height="72" Margin="50,10,0,0" VerticalAlignment="Top" Width="150" Click="Button_Click_2"/>
             </StackPanel>
             <CheckBox x:Name="AttributeChk" Content="Ignore Attribute Errors" IsChecked="False" Checked="AttributeChk_Checked"></CheckBox>

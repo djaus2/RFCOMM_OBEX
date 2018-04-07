@@ -37,6 +37,16 @@ namespace RFCOMM_OBEX
 
                 if (services.Count > 0)
                 {
+                    //var sdf = services[0];
+                    //var azx = sdf.Name;
+                    //var asxc = sdf.Kind;
+                    //var azxwsx= sdf.Id;
+                    //var qaaszx = sdf.Pairing;
+                    //var wsdfg = sdf.EnclosureLocation;
+
+                    //System.Diagnostics.Debug.WriteLine(azx, " " , asxc, " ", azxwsx, " ", qaaszx, " ", wsdfg);
+
+
                     // Initialize the target Bluetooth BR device
                     var service = await RfcommDeviceService.FromIdAsync(services[0].Id);
 
@@ -134,30 +144,31 @@ namespace RFCOMM_OBEX
         }
 
         // This App relies on CRC32 checking available in version 2.0 of the service.
-        const uint SERVICE_VERSION_ATTRIBUTE_ID = 0x0300;
-        const byte SERVICE_VERSION_ATTRIBUTE_TYPE = 0x0A;   // UINT32
-        const uint MINIMUM_SERVICE_VERSION = 200;
+        //const uint SERVICE_VERSION_ATTRIBUTE_ID = 0x0300;
+        //const byte SERVICE_VERSION_ATTRIBUTE_TYPE = 0x0A;   // UINT32
+        //const uint MINIMUM_SERVICE_VERSION = 200;
         private async Task<bool> IsCompatibleVersion(RfcommDeviceService service)
         {
             try
             {
                 var attributes = await service.GetSdpRawAttributesAsync(
-                    BluetoothCacheMode.Uncached);
+                    //BluetoothCacheMode.Cached);
+                BluetoothCacheMode.Uncached);
                 if (attributes != null)
                 {
                     var lst = attributes.Keys.ToList<uint>();
-                    if (attributes.Keys.Contains(SERVICE_VERSION_ATTRIBUTE_ID))
+                    if (attributes.Keys.Contains(Constants.SERVICE_VERSION_ATTRIBUTE_ID))
                     {
-                        var attribute = attributes[SERVICE_VERSION_ATTRIBUTE_ID];
+                        var attribute = attributes[Constants.SERVICE_VERSION_ATTRIBUTE_ID];
                         var reader = DataReader.FromBuffer(attribute);
 
                         // The first byte contains the attribute' s type
                         byte attributeType = reader.ReadByte();
-                        if (attributeType == SERVICE_VERSION_ATTRIBUTE_TYPE)
+                        if (attributeType == Constants.SERVICE_VERSION_ATTRIBUTE_TYPE)
                         {
                             // The remainder is the data
                             uint version = reader.ReadUInt32();
-                            return version >= MINIMUM_SERVICE_VERSION;
+                            return version >= Constants.MINIMUM_SERVICE_VERSION;
                         }
                     }
                     else
@@ -178,7 +189,7 @@ namespace RFCOMM_OBEX
             try
             {
                 CancellationTokenSource source = new CancellationTokenSource();
-                source.CancelAfter(TimeSpan.FromSeconds(FileDetail.Timeout));
+                source.CancelAfter(TimeSpan.FromSeconds(Constants.Timeout));
                 Task task = Task.Run(() => SendWithCancel(stringToSend, filename, source.Token), source.Token);
                 await task;
             } catch (TaskCanceledException ex)

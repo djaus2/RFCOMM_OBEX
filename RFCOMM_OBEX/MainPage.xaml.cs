@@ -171,7 +171,7 @@ namespace RFCOMM_OBEX
             // Dropdown of file types the user can save the file as
             savePicker.FileTypeChoices.Add("Plain Text", new List<string>() { ".txt" });
             // Default file name if the user does not type one in or select a file to replace
-            savePicker.SuggestedFileName = "New Document";
+            savePicker.SuggestedFileName = rcvFile.filename;
 
             file = await savePicker.PickSaveFileAsync();
             if (file == null)
@@ -181,7 +181,7 @@ namespace RFCOMM_OBEX
             }
             
 
-            await file.RenameAsync(rcvFile.filename);
+            //await file.RenameAsync(rcvFile.filename);
 
 
             // Prevent updates to the remote version of the file until
@@ -206,45 +206,45 @@ namespace RFCOMM_OBEX
 
         }
 
-        Windows.Storage.StorageFolder RecvFolder = null;
+        //Windows.Storage.StorageFolder RecvFolder = null;
 
-        private async Task SaveAFile3(FileDetail rcvFile)
-        {
-            if (RecvFolder==null)
-            {
-                PostMessage("SaveAFile3", "Operation cancelled as no Recv folder.");
-                return;
-            }
-            Windows.Storage.StorageFile file =  await RecvFolder.CreateFileAsync(rcvFile.filename,Windows.Storage.CreationCollisionOption.GenerateUniqueName);
+        //private async Task SaveAFile3(FileDetail rcvFile)
+        //{
+        //    if (RecvFolder==null)
+        //    {
+        //        PostMessage("SaveAFile3", "Operation cancelled as no Recv folder.");
+        //        return;
+        //    }
+        //    Windows.Storage.StorageFile file =  await RecvFolder.CreateFileAsync(rcvFile.filename,Windows.Storage.CreationCollisionOption.GenerateUniqueName);
  
-            if (file == null)
-            {
-                PostMessage("SaveAFile3", "Operation cancelled as failed to create file.");
-                return;
-            }
+        //    if (file == null)
+        //    {
+        //        PostMessage("SaveAFile3", "Operation cancelled as failed to create file.");
+        //        return;
+        //    }
 
 
-            // Prevent updates to the remote version of the file until
-            // we finish making changes and call CompleteUpdatesAsync.
-            Windows.Storage.CachedFileManager.DeferUpdates(file);
-            // write to file
-            await Windows.Storage.FileIO.WriteTextAsync(file, rcvFile.txt);
-            // Let Windows know that we're finished changing the file so
-            // the other app can update the remote version of the file.
-            // Completing updates may require Windows to ask for user input.
-            Windows.Storage.Provider.FileUpdateStatus status =
-                await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
-            if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
-            {
-                PostMessage("File ", file.Name + " was saved in \r\n" + file.Path);
+        //    // Prevent updates to the remote version of the file until
+        //    // we finish making changes and call CompleteUpdatesAsync.
+        //    Windows.Storage.CachedFileManager.DeferUpdates(file);
+        //    // write to file
+        //    await Windows.Storage.FileIO.WriteTextAsync(file, rcvFile.txt);
+        //    // Let Windows know that we're finished changing the file so
+        //    // the other app can update the remote version of the file.
+        //    // Completing updates may require Windows to ask for user input.
+        //    Windows.Storage.Provider.FileUpdateStatus status =
+        //        await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
+        //    if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
+        //    {
+        //        PostMessage("File ", file.Name + " was saved in \r\n" + file.Path);
 
-            }
-            else
-            {
-                PostMessage("File ", file.Name + " couldn't be saved.");
-            }
+        //    }
+        //    else
+        //    {
+        //        PostMessage("File ", file.Name + " couldn't be saved.");
+        //    }
 
-        }
+        //}
 
         internal async void SaveFile(FileDetail rcvFile)
         {
@@ -264,7 +264,9 @@ namespace RFCOMM_OBEX
 
         private  void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            OBEX_Receiver.Connected = false;
+            rcvr.Dispose();
+            rcvr = null;
+            BtnRecv.Content = "RecvTxt";
         }
 
         private   void Page_Loaded(object sender, RoutedEventArgs e)
@@ -323,34 +325,34 @@ namespace RFCOMM_OBEX
             }
             if (rcvr != null)
             {
+                rcvr.Dispose();
                 rcvr = null;
             }
             Application.Current.Exit();
         }
 
+
+        string RecvTxt = "";
         private async void Button_Click_3(object sender, RoutedEventArgs e)
         {
-
-
-            rcvr = new OBEX_Receiver();
-            await rcvr.Initialize();
-
-            FolderPicker picker = new FolderPicker();
-            picker.FileTypeFilter.Add("*");
-            picker.ViewMode = PickerViewMode.List;
-            picker.SuggestedStartLocation = PickerLocationId.Downloads;
-            RecvFolder= await picker.PickSingleFolderAsync();
-            if (RecvFolder != null)
+            Button butt = (Button)sender;
+            if (butt != null)
             {
-                // Application now has read/write access to all contents in the picked folder
-                // (including other sub-folder contents)
-                Windows.Storage.AccessCache.StorageApplicationPermissions.
-                FutureAccessList.AddOrReplace("PickedFolderToken", RecvFolder);
-                PostMessage ("Picked folder: " , RecvFolder.Path);
-            }
-            else
-            {
-                PostMessage("Pick Folder", "Operation cancelled");
+                string txt = (string)butt.Content;
+                if (txt != "Stop Recv")
+                {
+                    RecvTxt = txt;
+                    rcvr = new OBEX_Receiver();
+                    await rcvr.Initialize();
+                    BtnRecv.Content = "Stop Recv";
+                }
+                else
+                {
+                    rcvr.Dispose();
+                    rcvr = null;
+                    BtnRecv.Content = "RecvTxt";
+                    PostMessage("", "Stopped Listening");
+                }
             }
         }
 

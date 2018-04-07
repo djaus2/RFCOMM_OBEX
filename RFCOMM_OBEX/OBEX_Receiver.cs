@@ -11,16 +11,13 @@ using Windows.UI.Xaml;
 
 namespace RFCOMM_OBEX
 {
-    class OBEX_Receiver
+    class OBEX_Receiver: IDisposable
     {
         Windows.Devices.Bluetooth.Rfcomm.RfcommServiceProvider _provider;
         //StreamSocket _socket = null;
         //DataReader reader = null;
 
-        ~OBEX_Receiver()
-        {
-            
-        }
+
 
         private void PostMessage(string method, string msg)
         {
@@ -45,6 +42,7 @@ namespace RFCOMM_OBEX
                 // Set the SDP attributes and start advertising
                 InitializeServiceSdpAttributes(_provider);
                 _provider.StartAdvertising(listener);
+                PostMessage("OBEX_Receiver.Initialize", "Listening");
             }
             catch (Exception ex)
             {
@@ -53,10 +51,6 @@ namespace RFCOMM_OBEX
         }
 
 
-        const uint SERVICE_VERSION_ATTRIBUTE_ID = 0x0300;
-        const byte SERVICE_VERSION_ATTRIBUTE_TYPE = 0x0A;   // UINT32
-        const uint SERVICE_VERSION = 200;
-        const uint MINIMUM_SERVICE_VERSION = 200;
         void InitializeServiceSdpAttributes(RfcommServiceProvider provider)
         {
             try
@@ -64,27 +58,27 @@ namespace RFCOMM_OBEX
                 var writer = new Windows.Storage.Streams.DataWriter();
 
                 // First write the attribute type
-                writer.WriteByte(SERVICE_VERSION_ATTRIBUTE_TYPE);
+                writer.WriteByte(Constants.SERVICE_VERSION_ATTRIBUTE_TYPE);
                 // Then write the data
-                writer.WriteUInt32(SERVICE_VERSION);
+                writer.WriteUInt32(Constants.SERVICE_VERSION);
 
                 var data = writer.DetachBuffer();
-                provider.SdpRawAttributes.Add(SERVICE_VERSION_ATTRIBUTE_ID, data);
+                provider.SdpRawAttributes.Add(Constants.SERVICE_VERSION_ATTRIBUTE_ID, data);
                 //Check attributes
                 try
                 {
                     var attributes = provider.SdpRawAttributes;
                     // BluetoothCacheMode.Uncached);
-                    var attribute = attributes[SERVICE_VERSION_ATTRIBUTE_ID];
+                    var attribute = attributes[Constants.SERVICE_VERSION_ATTRIBUTE_ID];
                     var reader = DataReader.FromBuffer(attribute);
 
                     // The first byte contains the attribute' s type
                     byte attributeType = reader.ReadByte();
-                    if (attributeType == SERVICE_VERSION_ATTRIBUTE_TYPE)
+                    if (attributeType == Constants.SERVICE_VERSION_ATTRIBUTE_TYPE)
                     {
                         // The remainder is the data
                         uint version = reader.ReadUInt32();
-                        bool ret = (version >= MINIMUM_SERVICE_VERSION);
+                        bool ret = (version >= Constants.MINIMUM_SERVICE_VERSION);
                     }
                 }
                 catch (Exception ex)
@@ -140,10 +134,9 @@ namespace RFCOMM_OBEX
             {
                 try
                 {
-                    while (Connected)
-                    {
+
                         //Read filename then file contents
-                        for (int i = 0; (i < 2) && Connected; i++)
+                        for (int i = 0; (i < 2) ; i++)
                         {
                             if (_socket == null)
                                 Connected = false;
@@ -176,7 +169,7 @@ namespace RFCOMM_OBEX
                                     else
                                     {
                                         string message = reader.ReadString(currentLength);
-                                        if (message == FileDetail.EndTransmission)
+                                        if (message == Constants.EndTransmission)
                                             Connected = false;
                                         else
                                         {
@@ -190,7 +183,7 @@ namespace RFCOMM_OBEX
                                         }
                                     }
                                 }
-                            }
+                            
                         }
                     }
                 }
@@ -206,6 +199,51 @@ namespace RFCOMM_OBEX
             MainPage.root.RecvConnected = false; 
             if (_socket != null)
                 _socket.Dispose();
+            Connected = false;
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                    Connected = false;
+                    MainPage.root.RecvConnected = false;
+                    //if (_socket != null)
+                    //    _socket.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~OBEX_Receiver() {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
+        }
+
+        internal void Cancel()
+        {
+            Connected = false;
+        }
+        #endregion
     }
 }
